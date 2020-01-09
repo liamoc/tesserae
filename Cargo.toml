@@ -1,0 +1,27 @@
+[package]
+name = "tesserae"
+version = "0.1.0"
+authors = ["Liam O’Connor <liamoc@cse.unsw.edu.au>"]
+edition = "2018"
+license = "BSD-3-Clause"
+description = "A library for manipulating 8x8 2-color tile graphics in the spirit of 8-bit text mode drawing."
+homepage = "https://github.com/liamoc/tesserae"
+repository = "https://github.com/liamoc/tesserae"
+documentation = "https://github.com/liamoc/tesserae"
+categories = [ "graphics", "game-development" ]
+keywords = [ "tiles", "petscii", "ascii", "text mode", "8-bit" ]
+
+[lib]
+name = "tesserae"
+path = "src/lib.rs"
+
+[dependencies]
+byteorder = "1.3.2"
+sdl2 = "0.32.2"
+
+[dev-dependencies]
+bit_reverse="0.1.8"
+clap="2.33.0"
+
+[badges]
+maintenance = { status = "experimental" }
