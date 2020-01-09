@@ -9,7 +9,7 @@ homepage = "https://github.com/liamoc/tesserae"
 repository = "https://github.com/liamoc/tesserae"
 documentation = "https://github.com/liamoc/tesserae"
 categories = [ "graphics", "game-development" ]
-keywords = [ "tiles", "petscii", "ascii", "text mode", "8-bit" ]
+keywords = [ "tiles", "petscii", "ascii", "textmode", "8bit" ]
 
 [lib]
 name = "tesserae"
