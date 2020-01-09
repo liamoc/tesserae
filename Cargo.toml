@@ -7,7 +7,7 @@ license = "BSD-3-Clause"
 description = "A library for manipulating 8x8 2-color tile graphics in the spirit of 8-bit text mode drawing."
 homepage = "https://github.com/liamoc/tesserae"
 repository = "https://github.com/liamoc/tesserae"
-documentation = "https://github.com/liamoc/tesserae"
+documentation = "https://docs.rs/crate/tesserae"
 categories = [ "graphics", "game-development" ]
 keywords = [ "tiles", "petscii", "ascii", "textmode", "8bit" ]
 
