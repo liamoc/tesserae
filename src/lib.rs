@@ -438,10 +438,12 @@ impl <T>Graphic<T> {
         if x < self.width && y < self.height {
             let i = (x + y * self.width) as usize;
             if let Some(mut t) = self.tiles.get_mut(i) {
-                t.index = tile.index;
-                t.fg = tile.fg;
-                t.bg = tile.bg;
-                self.dirty[i] = true;
+                if *t != tile {
+                    t.index = tile.index;
+                    t.fg = tile.fg;
+                    t.bg = tile.bg;
+                    self.dirty[i] = true;
+                }
             }
         }
     }
@@ -450,9 +452,11 @@ impl <T>Graphic<T> {
         if x < self.width && y < self.height {
             let i = (x + y * self.width) as usize;
             if let Some(mut t) = self.tiles.get_mut(i) {
-                t.fg = fg;
-                t.bg = bg;
-                self.dirty[i] = true;
+                if t.fg != fg || t.bg != bg { 
+                    t.fg = fg;
+                    t.bg = bg;
+                    self.dirty[i] = true;
+                }
             }
         }
 
