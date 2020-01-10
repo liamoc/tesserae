@@ -531,18 +531,22 @@ impl <'r>Graphic<Texture<'r>> {
         }
     }
     /// Draw each tile marked dirty in the graphic to the internal texture using the provided tile set.
-    pub fn update_texture(&mut self, tile_set : &TileSet) {
+    /// Returns number of tiles redrawn.
+    pub fn update_texture(&mut self, tile_set : &TileSet) -> u32 {
         let mut i = 0;
+        let mut c = 0;
         for y in 0..self.height {
             for x in 0..self.width {
                 if self.dirty[i] {
                     let t = self.tiles[i];
                     tile_set.draw_tile_to(t.index,&mut self.texture,Point::new((x * 8) as i32, (y * 8) as i32), t.fg,t.bg);
                     self.dirty[i] = false;
+                    c += 1;
                 }
                 i += 1
             }
         }
+        c
     }
     /// Draw the graphic to the screen at the provided position.
     /// Note that you may wish to call `update_texture` and provide a tile set first, as this simply draws the 

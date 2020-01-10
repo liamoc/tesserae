@@ -74,7 +74,7 @@ impl <'r> TileEditor<'r> {
                 m >>= 1                
             }
         }
-        self.editor_view.update_texture(&self.default_tiles)
+        self.editor_view.update_texture(&self.default_tiles);
     }
     fn refresh_stats_view(&mut self) {
         let g = &mut self.stats_view;
