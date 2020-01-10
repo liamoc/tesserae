@@ -283,17 +283,18 @@ impl Default for Tile {
 /// 
 /// A `Graphic<Texture>` contains a cached 
 /// SDL texture and features additional methods for refreshing
-/// the texture cache and drawing the texture to screen. Any time the 
-/// tiles in the graphic are changed, a `dirty` flag for those tiles is set to true.
-/// This can be set back to false again by calling `update_texture`,
-/// which redraws all dirty tiles in the graphic to the texture. 
+/// the texture cache and drawing the texture to screen. 
+/// Which tiles have been drawn to the texture are stored in a special 
+/// cache. Whenever `update_texture` is called, the tiles that have been 
+/// changed relative to that cache are redrawn to the texture.
+/// The cache can be entirely invalidated by calling `mark_dirty`.
 #[derive(Clone)]
 pub struct Graphic<T> {
     width: u32, 
     height: u32,
     tiles: Vec<Tile>,
     texture: T,
-    dirty: Vec<bool>,
+    dirty: Vec<Option<Tile>>,
 }
 
 impl <T> Index<(u32, u32)> for Graphic<T> {
@@ -352,7 +353,7 @@ impl Graphic<()> {
         for _ in 0..width {
             for _ in 0..height {
                 tiles.push(tile);
-                dirty.push(true)
+                dirty.push(None)
             }
         }
         Graphic {
@@ -378,7 +379,7 @@ impl Graphic<()> {
     /// ```
     /// let g = Graphics::load_file("path")?.textured(texture_creator);
     /// ```
-    /// Note that the texture has not rendered yet (and is marked as dirty), so typically you would want to call `update_texture` 
+    /// Note that the texture has not rendered yet, so typically you would want to call `update_texture` 
     /// and provide a tileset before drawing to screen.
     pub fn textured<'r, T>(&self,texture_creator: &'r TextureCreator<T>) -> Graphic<Texture<'r>> {
         let mut tex = texture_creator.create_texture_streaming(PixelFormatEnum::ARGB8888, 8 * self.width, 8 * self.height).unwrap();
@@ -437,13 +438,8 @@ impl <T>Graphic<T> {
     pub fn set_tile(&mut self, x: u32, y: u32, tile : Tile) {        
         if x < self.width && y < self.height {
             let i = (x + y * self.width) as usize;
-            if let Some(mut t) = self.tiles.get_mut(i) {
-                if *t != tile {
-                    t.index = tile.index;
-                    t.fg = tile.fg;
-                    t.bg = tile.bg;
-                    self.dirty[i] = true;
-                }
+            if let Some(t) = self.tiles.get_mut(i) {
+                *t = tile;
             }
         }
     }
@@ -452,11 +448,8 @@ impl <T>Graphic<T> {
         if x < self.width && y < self.height {
             let i = (x + y * self.width) as usize;
             if let Some(mut t) = self.tiles.get_mut(i) {
-                if t.fg != fg || t.bg != bg { 
-                    t.fg = fg;
-                    t.bg = bg;
-                    self.dirty[i] = true;
-                }
+                t.fg = fg;
+                t.bg = bg;
             }
         }
 
@@ -524,23 +517,23 @@ impl <'r>Graphic<Texture<'r>> {
         let g = Graphic::load_from(File::open(path)?)?;
         Ok(g.textured(texture_creator))
     }
-    /// Mark all tiles in the graphic as needing redrawing (via `update_texture`). This is useful if you need to change tile sets.
+    /// Instructs the next invocation of update_texture to redraw all tiles, regardless of whether it thinks they need redrawing.
     pub fn mark_dirty(&mut self) {
         for i in 0..self.dirty.len() {
-            self.dirty[i] = true
+            self.dirty[i] = None
         }
     }
-    /// Draw each tile marked dirty in the graphic to the internal texture using the provided tile set.
+    /// Draw each tile that needs redrawing in the graphic to the internal texture using the provided tile set.
     /// Returns number of tiles redrawn.
     pub fn update_texture(&mut self, tile_set : &TileSet) -> u32 {
         let mut i = 0;
         let mut c = 0;
         for y in 0..self.height {
             for x in 0..self.width {
-                if self.dirty[i] {
-                    let t = self.tiles[i];
+                let t = self.tiles[i];
+                if self.dirty[i] != Some(t) {
                     tile_set.draw_tile_to(t.index,&mut self.texture,Point::new((x * 8) as i32, (y * 8) as i32), t.fg,t.bg);
-                    self.dirty[i] = false;
+                    self.dirty[i] = Some(t);
                     c += 1;
                 }
                 i += 1
