@@ -284,16 +284,16 @@ impl Default for Tile {
 /// A `Graphic<Texture>` contains a cached 
 /// SDL texture and features additional methods for refreshing
 /// the texture cache and drawing the texture to screen. Any time the 
-/// tiles in the graphic are changed, a `dirty` flag is set to true.
+/// tiles in the graphic are changed, a `dirty` flag for those tiles is set to true.
 /// This can be set back to false again by calling `update_texture`,
-/// which redraws the graphic to the texture. 
+/// which redraws all dirty tiles in the graphic to the texture. 
 #[derive(Clone)]
 pub struct Graphic<T> {
     width: u32, 
     height: u32,
     tiles: Vec<Tile>,
     texture: T,
-    dirty: bool,
+    dirty: Vec<bool>,
 }
 
 impl <T> Index<(u32, u32)> for Graphic<T> {
@@ -348,9 +348,11 @@ impl Graphic<()> {
     /// Create a graphic comprised of the given tile repeated `width` times `height` times.
     pub fn solid(width: u32, height: u32, tile: Tile) -> Graphic<()>{
         let mut tiles = Vec::new();
+        let mut dirty = Vec::new();
         for _ in 0..width {
             for _ in 0..height {
-                tiles.push(tile)
+                tiles.push(tile);
+                dirty.push(true)
             }
         }
         Graphic {
@@ -358,7 +360,7 @@ impl Graphic<()> {
             height: height,
             tiles: tiles,
             texture: (),
-            dirty: false
+            dirty: dirty
         }
     }
     /// Create a blank graphic of the given size, with the tile index 0, fully transparent colors.
@@ -386,7 +388,7 @@ impl Graphic<()> {
             height: self.height,
             tiles: self.tiles.clone(),
             texture: tex,
-            dirty: true
+            dirty: self.dirty.clone()
         };
         g
     }
@@ -432,23 +434,25 @@ impl <T>Graphic<T> {
     /// Change the tile at position `(x,y)` in the graphic.
     /// Equivalent to assigning to an index, but does nothing if the tile 
     /// is out of bounds rather than panic.
-    pub fn set_tile(&mut self, x: u32, y: u32, tile : Tile) {
+    pub fn set_tile(&mut self, x: u32, y: u32, tile : Tile) {        
         if x < self.width && y < self.height {
-            if let Some(mut t) = self.tiles.get_mut((x + y * self.width) as usize) {            
+            let i = (x + y * self.width) as usize;
+            if let Some(mut t) = self.tiles.get_mut(i) {
                 t.index = tile.index;
                 t.fg = tile.fg;
                 t.bg = tile.bg;
-                self.dirty = true;
+                self.dirty[i] = true;
             }
         }
     }
     /// Set the colors of the given tile in the graphic but leave the tile index unchanged.
     pub fn color_tile(&mut self, x: u32, y:u32, fg: Color, bg: Color) {
         if x < self.width && y < self.height {
-            if let Some(mut t) = self.tiles.get_mut((x + y * self.width) as usize) {            
+            let i = (x + y * self.width) as usize;
+            if let Some(mut t) = self.tiles.get_mut(i) {
                 t.fg = fg;
                 t.bg = bg;
-                self.dirty = true;
+                self.dirty[i] = true;
             }
         }
 
@@ -516,22 +520,24 @@ impl <'r>Graphic<Texture<'r>> {
         let g = Graphic::load_from(File::open(path)?)?;
         Ok(g.textured(texture_creator))
     }
-    /// Mark the texture as needing updating (via `update_texture`). This is useful if you need to change tile sets.
+    /// Mark all tiles in the graphic as needing redrawing (via `update_texture`). This is useful if you need to change tile sets.
     pub fn mark_dirty(&mut self) {
-        self.dirty = true
+        for i in 0..self.dirty.len() {
+            self.dirty[i] = true
+        }
     }
-    /// If the dirty flag is true, draw each tile in the graphic to the internal texture using the provided tile set.
+    /// Draw each tile marked dirty in the graphic to the internal texture using the provided tile set.
     pub fn update_texture(&mut self, tile_set : &TileSet) {
-        if self.dirty {
-            let mut i = 0;
-            for y in 0..self.height {
-                for x in 0..self.width {
-                    let t = self.tiles.get(i).unwrap();
+        let mut i = 0;
+        for y in 0..self.height {
+            for x in 0..self.width {
+                if self.dirty[i] {
+                    let t = self.tiles[i];
                     tile_set.draw_tile_to(t.index,&mut self.texture,Point::new((x * 8) as i32, (y * 8) as i32), t.fg,t.bg);
-                    i += 1
+                    self.dirty[i] = false;
                 }
+                i += 1
             }
-            self.dirty = false
         }
     }
     /// Draw the graphic to the screen at the provided position.
