@@ -85,7 +85,7 @@ impl <'r> GraphicsEditor<'r> {
         self.refresh_editor_view();
         self.refresh_stats_view();
         self.refresh_cursor();
-        self.tile_set_chooser.refresh();
+        self.tile_set_chooser.refresh(false);
         self.color_chooser.refresh(&self.default_tiles);
     }
     fn refresh_cursor(&mut self) {
@@ -362,6 +362,7 @@ impl <'r> GraphicsEditor<'r> {
                     self.editor_view.mark_dirty();
                     self.tile_set_chooser.set_selected(editor.selected());
                     *self.tile_set_chooser.tile_set_mut() = tile_set;
+                    self.tile_set_chooser.refresh(true);
                     self.refresh_views();
                 }
                 _ => {}
@@ -393,12 +394,15 @@ pub fn run<'r>(c: Config<'r>) {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     video_subsystem.text_input().start();
+    //let (ddpi,hdpi,vdpi) = video_subsystem.display_dpi().unwrap();
     let window = video_subsystem.window("tesseraed", 1280, 800)
         .position_centered()
+        .allow_highdpi()
         .build()
         .unwrap();
  
     let mut canvas = window.into_canvas().build().unwrap();    
+    canvas.set_logical_size(1280,800).unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
     let texture_creator = canvas.texture_creator();
     let graphic = match c.edit_mode {

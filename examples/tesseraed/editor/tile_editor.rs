@@ -84,13 +84,14 @@ impl <'r> TileEditor<'r> {
         g.draw_text(&self.cursor_y.to_string(), &self.default_tiles, 5,2,colors::PALE_YELLOW, colors::TRANSPARENT);
         self.preview.draw_rect(0,0,3,2,Tile{index:self.tile_set_chooser.selected(), fg:colors::WHITE,bg:colors::BLACK});
         self.preview.draw_rect(3,0,3,2,Tile{index:self.tile_set_chooser.selected(), bg:colors::WHITE,fg:colors::BLACK});
+        self.preview.mark_dirty();
         self.preview.update_texture(self.tile_set_chooser.tile_set());
         g.update_texture(&self.default_tiles);
     }
     fn refresh_views(&mut self) {
         self.refresh_editor_view();
         self.refresh_stats_view();
-        self.tile_set_chooser.refresh();
+        self.tile_set_chooser.refresh(true);
     }
     fn change_tile(&mut self, delta: i32) {
         self.tile_set_chooser.move_selected(delta);

@@ -81,7 +81,7 @@ impl <'r> TileSetChooser<'r> {
     pub fn graphic(&self) -> &Graphic<Texture<'r>> {
         &self.graphic
     }
-    pub fn refresh(&mut self) {
+    pub fn refresh(&mut self, redraw_tiles : bool) {
         let mut i = 0;
         for y in 0..self.graphic.height() {
             for x in 0..self.graphic.width() {
@@ -93,6 +93,7 @@ impl <'r> TileSetChooser<'r> {
                 i += 1
             }
         }
+        if redraw_tiles { self.graphic.mark_dirty(); }
         self.graphic.update_texture(&self.tile_set);
     }
     pub fn set_selected(&mut self, new: usize) {
