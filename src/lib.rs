@@ -510,6 +510,7 @@ impl <T>Graphic<T> {
     }
 
 }
+
 impl <'r>Graphic<Texture<'r>> {
 
     /// A shortcut to load a file and associate a texture in one step. Equivalent to using `load_file` and then `textured`.
@@ -571,4 +572,50 @@ pub fn draw_tile_data<P : Into<Point>>(data: u64 , tex: &mut Texture, point: P, 
             pixel_data[curr] = a; curr += 1;
         }
         tex.update(Rect::new(point.x,point.y,8,8),&pixel_data, 8 * 4).unwrap();
+}
+
+use std::collections::HashMap;
+
+/// An alternative backend that stores each individual tile as a separate SDL texture in a hashtable.
+/// Can be used in some cases as a drop-in replacement for a textured graphic.
+/// Draw is slightly slower but updating textures is significantly faster if the same 
+/// tile is used in a lot of different places.
+pub struct TileCache<'r,C> {
+    texture_creator: &'r TextureCreator<C>,
+    cache: HashMap<Tile,Texture<'r>>
+}
+
+impl <'r,C>Graphic<TileCache<'r,C>> {
+
+    /// Draw each tile that needs redrawing in the graphic to the internal texture cache using the provided tile set.
+    /// Returns number of tiles redrawn.
+    pub fn update_texture(&mut self, tile_set : &TileSet) -> u32 {
+        let mut c = 0;
+        for t in &self.tiles {
+            if !self.texture.cache.contains_key(t) {
+                let mut tex = self.texture.texture_creator.create_texture_streaming(PixelFormatEnum::ARGB8888, 8, 8).unwrap();
+                tex.set_blend_mode(BlendMode::Blend);
+                tile_set.draw_tile_to(t.index, &mut tex, (0,0), t.fg, t.bg);
+                self.texture.cache.insert(*t,tex);
+                c += 1;
+            }
+        }
+        c
+    }
+    /// Draw the graphic to the screen at the provided position.
+    /// Note that you may wish to call `update_texture` and provide a tile set first, as this simply draws the 
+    /// cached textures.
+    pub fn draw<P : Into<Point>,T:RenderTarget>(&self, canvas: &mut Canvas<T>, position : P) {   
+        let mut i = 0;
+        let pos = position.into();
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let t = self.tiles[i];
+                if let Some(tex) = self.texture.cache.get(&t) {
+                    canvas.copy(&tex,None,Rect::new(pos.x + x as i32 * 8, pos.y + y as i32 * 8, 8 ,8)).unwrap();
+                }
+                i += 1
+            }
+        }
+    }
 }
