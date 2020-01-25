@@ -407,7 +407,7 @@ impl Graphic<()> {
             width: self.width,
             height: self.height,
             tiles: self.tiles.clone(),
-            texture: HashMap::new(),
+            texture: TileCache { cache: HashMap::new(), texture_creator: texture_creator },
             dirty: self.dirty.clone()
         };
         g
