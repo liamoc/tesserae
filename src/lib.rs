@@ -19,6 +19,8 @@ use std::path::Path;
 use std::io::{Cursor,Read,Write};
 use std::io;
 use std::ops::{Index,IndexMut};
+use std::collections::HashMap;
+
 use byteorder::{LittleEndian,ReadBytesExt,WriteBytesExt};
 
 use sdl2::pixels::{Color,PixelFormatEnum};
@@ -393,6 +395,23 @@ impl Graphic<()> {
         };
         g
     }
+    /// A method to attach a hash table of individual tile textures, converting the graphic from an unrenderable one to a renderable one.
+    /// Commonly used straight after creation, like so:
+    /// ```
+    /// let g = Graphics::load_file("path")?.tile_cache_textured(texture_creator);
+    /// ```
+    /// Note that the texture has not rendered yet, so typically you would want to call `update_texture` 
+    /// and provide a tileset before drawing to screen.
+    pub fn tile_cache_textured<'r, T>(&self,texture_creator: &'r TextureCreator<T>) -> Graphic<TileCache<'r,T>> {
+        let g = Graphic {
+            width: self.width,
+            height: self.height,
+            tiles: self.tiles.clone(),
+            texture: HashMap::new(),
+            dirty: self.dirty.clone()
+        };
+        g
+    }
 }
 impl <T>Graphic<T> {
 
@@ -574,7 +593,6 @@ pub fn draw_tile_data<P : Into<Point>>(data: u64 , tex: &mut Texture, point: P, 
         tex.update(Rect::new(point.x,point.y,8,8),&pixel_data, 8 * 4).unwrap();
 }
 
-use std::collections::HashMap;
 
 /// An alternative backend that stores each individual tile as a separate SDL texture in a hashtable.
 /// Can be used in some cases as a drop-in replacement for a textured graphic.
